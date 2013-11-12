@@ -21,6 +21,12 @@ it couldn't be helped.  And while we're at it, the apache httpcomponents library
 the most transparent or easy to use thing in the world, which is probably why it 
 undergoes such massive changes between versions.  Unfortunately, not much else out there.
 
+Everything herein is developed based on open-source software, and the end user
+is responsible for complying with any restrictions on the use thereof.  If you
+are interested in having a custom backend written for you or a modification
+done, I may be available for contract work.
+
+
 Building and Installation
 -------------------------
 
