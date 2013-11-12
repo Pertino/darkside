@@ -1,0 +1,428 @@
+package org.devnull.darkside;
+
+import org.devnull.darkside.configs.DarksideConfig;
+import org.devnull.darkside.configs.LevelDBConfig;
+import com.sun.jersey.spi.container.servlet.ServletContainer;
+import org.apache.commons.io.FileUtils;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpResponse;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.auth.params.AuthPNames;
+import org.apache.http.client.HttpRequestRetryHandler;
+import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.params.AuthPolicy;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.conn.BasicClientConnectionManager;
+import org.apache.http.protocol.HttpContext;
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
+import org.devnull.statsd_client.StatsObject;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.util.thread.QueuedThreadPool;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.InetSocketAddress;
+import java.util.*;
+
+import static org.testng.AssertJUnit.assertNotNull;
+import static org.testng.AssertJUnit.assertTrue;
+
+public class RestHandlerLevelDBTest extends JsonBase
+{
+	private static final Logger log = Logger.getLogger(RestHandlerLevelDBTest.class);
+
+	private Server server = null;
+	private BackendDB db = null;
+	private static String dbPath = "/tmp/leveldbtest";
+
+	private static enum Type
+	{
+		GET, POST, DELETE
+	}
+
+	/**
+	 * This sets up a jetty server with the resthandler and tests all of the endpoints
+	 * therein.  The code here is mostly identical to the code in Darkside.java.
+	 *
+	 * @throws Exception
+	 */
+	@BeforeClass
+	public void setUp() throws Exception
+	{
+		StatsObject.getInstance().clear();
+
+		Properties logProperties = new Properties();
+
+		logProperties.put("log4j.rootLogger", "DEBUG, stdout");
+		logProperties.put("log4j.appender.stdout", "org.apache.log4j.ConsoleAppender");
+		logProperties.put("log4j.appender.stdout.layout", "org.apache.log4j.EnhancedPatternLayout");
+		logProperties.put("log4j.appender.stdout.layout.ConversionPattern", "%d [%F:%L] [%p] %C: %m%n");
+		logProperties.put("log4j.appender.stdout.immediateFlush", "true");
+
+		BasicConfigurator.resetConfiguration();
+		PropertyConfigurator.configure(logProperties);
+
+		File f = new File(dbPath);
+		if (f.exists())
+		{
+			log.debug("deleting leveldb cache: " + dbPath);
+			FileUtils.deleteDirectory(f);
+		}
+
+		LevelDBConfig leveldbConfig = new LevelDBConfig();
+		leveldbConfig.dbPath = dbPath;
+		leveldbConfig.maxItems = 10;
+
+		db = DBFactory.getBackendDBInstance("leveldb", mapper.valueToTree(leveldbConfig));
+
+		StuffHolder.getInstance().setDB(db);
+		StuffHolder.getInstance().setConfig(new DarksideConfig());
+
+		server = new Server(new InetSocketAddress("127.0.0.1", 8181));
+
+		ServletHolder servletHolder = new ServletHolder(ServletContainer.class);
+
+		servletHolder.setInitParameter("com.sun.jersey.config.property.resourceConfigClass",
+					       "com.sun.jersey.api.core.PackagesResourceConfig");
+
+		servletHolder.setInitParameter("com.sun.jersey.config.property.packages", "org.devnull.darkside");
+		servletHolder.setInitParameter("com.sun.jersey.api.json.POJOMappingFeature", "true");
+
+		servletHolder.setInitParameter("com.sun.jersey.config.feature.Debug", "true");
+		servletHolder.setInitParameter("com.sun.jersey.config.feature.Trace", "true");
+		servletHolder.setInitParameter("com.sun.jersey.spi.container.ContainerRequestFilters",
+					       "com.sun.jersey.api.container.filter.LoggingFilter");
+		servletHolder.setInitParameter("com.sun.jersey.spi.container.ContainerResponseFilters",
+					       "com.sun.jersey.api.container.filter.LoggingFilter");
+
+		ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
+		context.setContextPath("/");
+		context.addServlet(servletHolder, "/*");
+
+		context.setSecurityHandler(Darkside.getDigestAuthHandler("foo", "bar"));
+
+		server.setHandler(context);
+
+		QueuedThreadPool queuedThreadPool = new QueuedThreadPool(20);
+		queuedThreadPool.setName("RestHandlerThread");
+		server.setThreadPool(queuedThreadPool);
+		server.start();
+	}
+
+	/**
+	 * A server has been set up and started, and we can make http client requests against it.
+	 * I really would have preferred to use Jersey's client library here, but the lack of examples
+	 * on how to use it really slowed that down.
+	 *
+	 * @throws Exception on any exceptions uncaught.
+	 */
+	@Test
+	public void testAll() throws Exception
+	{
+		// get test 1: create an unauthenticated http digest request against server, expect fail
+
+		log.debug("making unauthenticated request for fqdn foo");
+
+		HttpResponse response = getResponse(Type.GET, false, "foo", null);
+		HttpEntity entity = response.getEntity();
+
+		int status = response.getStatusLine().getStatusCode();
+
+		assertTrue("status is: " + status, status == 401);
+
+		if (null != entity)
+		{
+			entity.getContent().close();
+		}
+
+		// get test 2: fetch an fqdn that does not exist in db, expect 404
+
+		log.debug("fetching an fqdn that does not exist in the db");
+
+		response = getResponse(Type.GET, true, "www.google.com", null);
+		entity = response.getEntity();
+		status = response.getStatusLine().getStatusCode();
+
+		assertTrue("status is: " + status, status == 404);
+
+		if (entity != null)
+		{
+			entity.getContent().close();
+		}
+
+		// delete test 1: try to delete fqdn that does not exist, expect 200, no error
+
+		log.debug("deleting an fqdn that does not exist in the db");
+
+		response = getResponse(Type.DELETE, true, "www.google.com", null);
+		entity = response.getEntity();
+		status = response.getStatusLine().getStatusCode();
+
+		assertTrue("status is: " + status, status == 200);
+
+		if (entity != null)
+		{
+			entity.getContent().close();
+		}
+
+		// post test 1: try to post with empty body
+
+		log.debug("creating an fqdn that does not exist in the db with a null record");
+
+		DNSRecord r = new DNSRecord();
+		response = getResponse(Type.POST, true, "www.google.com", null);
+		entity = response.getEntity();
+		status = response.getStatusLine().getStatusCode();
+
+		assertTrue("status is: " + status, status == 415);
+
+		if (entity != null)
+		{
+			entity.getContent().close();
+		}
+
+		// post test 2: try to post with incomplete record, expect fail
+
+		log.debug("creating an fqdn that does not exist in the db with incomplete records");
+
+		r = new DNSRecord();
+		response = getResponse(Type.POST, true, "www.google.com", r);
+		entity = response.getEntity();
+		status = response.getStatusLine().getStatusCode();
+
+		assertTrue("status is: " + status, status == 400);
+
+		BufferedReader br = new BufferedReader(new InputStreamReader(entity.getContent()));
+		String line = br.readLine();
+
+		assertNotNull(line);
+		assertTrue(line, line.equals("{\"error\":\"no records were specified\"}"));
+
+		br.close();
+
+		if (entity != null)
+		{
+			entity.getContent().close();
+		}
+
+		log.debug("creating an fqdn that does not exist in the db with incomplete records");
+
+		r = new DNSRecord();
+		r.setRecords(new ArrayList<IPRecord>());
+		response = getResponse(Type.POST, true, "www.google.com", r);
+		entity = response.getEntity();
+		status = response.getStatusLine().getStatusCode();
+
+		assertTrue("status is: " + status, status == 400);
+
+		br = new BufferedReader(new InputStreamReader(entity.getContent()));
+		line = br.readLine();
+
+		assertNotNull(line);
+		assertTrue(line, line.equals("{\"error\":\"records list was empty\"}"));
+
+		if (entity != null)
+		{
+			entity.getContent().close();
+		}
+
+		// post test 3: post with complete record with no ttl
+
+		log.debug("creating an fqdn that does not exist in the db with complete record with no ttl");
+
+		r = new DNSRecord();
+		List<IPRecord> ips = new ArrayList<IPRecord>();
+		ips.add(new IPRecord("1.1.1.1"));
+		r.setRecords(ips);
+		response = getResponse(Type.POST, true, "www.google.com", r);
+		entity = response.getEntity();
+		status = response.getStatusLine().getStatusCode();
+
+		assertTrue("status is: " + status, status == 200);
+
+		if (entity != null)
+		{
+			entity.getContent().close();
+		}
+
+		// post test 4: post with complete record with specific ttl
+
+		r = new DNSRecord();
+		ips = new ArrayList<IPRecord>();
+		ips.add(new IPRecord("1.1.1.1"));
+		r.setRecords(ips);
+		r.setTtl(100);
+		response = getResponse(Type.POST, true, "ttl100.google.com", r);
+		entity = response.getEntity();
+		status = response.getStatusLine().getStatusCode();
+
+		assertTrue("status is: " + status, status == 200);
+
+		if (entity != null)
+		{
+			entity.getContent().close();
+		}
+
+		// get test 3: fetch an fqdn that does exist but does not have ttl set, expect default ttl from config
+
+		response = getResponse(Type.GET, true, "www.google.com", null);
+		entity = response.getEntity();
+		status = response.getStatusLine().getStatusCode();
+
+		assertTrue("status is: " + status, status == 200);
+
+		br = new BufferedReader(new InputStreamReader(entity.getContent()));
+		line = br.readLine();
+
+		assertNotNull(line);
+		assertTrue(line, line.equals(
+			"{\"fqdn\":\"www.google.com\",\"ttl\":300,\"records\":[{\"address\":\"1.1.1.1\",\"type\":\"A\"}]}"));
+
+		if (entity != null)
+		{
+			entity.getContent().close();
+		}
+
+		// get test 4: fetch an fqdn that does exist and has ttl set, expect specific ttl
+
+		response = getResponse(Type.GET, true, "ttl100.google.com", null);
+		entity = response.getEntity();
+		status = response.getStatusLine().getStatusCode();
+
+		assertTrue("status is: " + status, status == 200);
+
+		br = new BufferedReader(new InputStreamReader(entity.getContent()));
+		line = br.readLine();
+
+		assertNotNull(line);
+		assertTrue(line, line.equals(
+			"{\"fqdn\":\"ttl100.google.com\",\"ttl\":100,\"records\":[{\"address\":\"1.1.1.1\",\"type\":\"A\"}]}"));
+
+		if (entity != null)
+		{
+			entity.getContent().close();
+		}
+
+		// delete test 3: delete both records that were created earlier
+
+		response = getResponse(Type.DELETE, true, "www.google.com", null);
+		entity = response.getEntity();
+		status = response.getStatusLine().getStatusCode();
+
+		assertTrue("status is: " + status, status == 200);
+
+		if (entity != null)
+		{
+			entity.getContent().close();
+		}
+
+		response = getResponse(Type.DELETE, true, "ttl100.google.com", null);
+		entity = response.getEntity();
+		status = response.getStatusLine().getStatusCode();
+
+		assertTrue("status is: " + status, status == 200);
+
+		if (entity != null)
+		{
+			entity.getContent().close();
+		}
+
+		// stats test: test results of statsobject, make sure counters line up with expectations
+
+		StatsObject so = StatsObject.getInstance();
+		TreeMap<String, Long> map = new TreeMap<String, Long>(so.getMap());
+		assertTrue(mapper.writeValueAsString(map), mapper.writeValueAsString(map).equals("{\"LevelDBBackend.deletes.ok\":3,\"LevelDBBackend.gets.ok\":3,\"LevelDBBackend.puts.ok\":2,\"RestHandler.deletes.success\":3,\"RestHandler.deletes.total\":3,\"RestHandler.gets.found\":2,\"RestHandler.gets.not_found\":1,\"RestHandler.gets.total\":3,\"RestHandler.posts.no_records\":2,\"RestHandler.posts.success\":2,\"RestHandler.posts.total\":4}"));
+	}
+
+	private HttpRequestRetryHandler getMyRetryHandler()
+	{
+		//
+		// set up a retry handler that overrides the default one, this one does not do any retries
+		//
+		return new HttpRequestRetryHandler()
+		{
+			public boolean retryRequest(
+				IOException exception,
+				int executionCount,
+				HttpContext context)
+			{
+				return false;
+			}
+		};
+	}
+
+	private HttpResponse getResponse(Type type, boolean useAuth, String fqdn, DNSRecord r) throws Exception
+	{
+		String PATH_BASE = "/fqdn/1/";
+
+		DefaultHttpClient httpClient = null;
+		httpClient = new DefaultHttpClient(new BasicClientConnectionManager());
+		httpClient.getParams().setParameter(AuthPNames.PROXY_AUTH_PREF, Arrays.asList(AuthPolicy.DIGEST));
+		httpClient.setHttpRequestRetryHandler(getMyRetryHandler());
+
+		if (useAuth)
+		{
+			httpClient.getCredentialsProvider().setCredentials
+				(
+					new AuthScope("127.0.0.1", 8181),
+					new UsernamePasswordCredentials("foo", "bar")
+				);
+		}
+
+		HttpHost httpHost = new HttpHost("127.0.0.1", 8181);
+
+		String path = PATH_BASE + fqdn;
+
+		switch (type)
+		{
+			case GET:
+				return httpClient.execute(httpHost, new HttpGet(path));
+			case POST:
+				HttpPost post = new HttpPost(path);
+				if (r != null)
+				{
+					post.setHeader("Content-Type", "application/json");
+					post.setEntity(new StringEntity(r.toString()));
+				}
+				return httpClient.execute(httpHost, post);
+			case DELETE:
+				return httpClient.execute(httpHost, new HttpDelete(path));
+		}
+
+		return null;
+	}
+
+	/**
+	 * stops and joins the jetty server and shuts down the database.
+	 *
+	 * @throws Exception on any errors.
+	 */
+	@AfterMethod
+	public void stopServer() throws Exception
+	{
+		server.stop();
+		server.join();
+		db.shutdown();
+
+		File f = new File(dbPath);
+
+		if (f.exists())
+		{
+			FileUtils.deleteDirectory(f);
+		}
+	}
+}

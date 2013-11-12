@@ -1,0 +1,305 @@
+This is a log of the curl commands I used to test the server.
+
+Here is the contents of the input file referenced in the -d @input flag passed to curl for POST data:
+
+dhawth@david-2.local ~ $ cat input 
+{"records":[{"address": "1.1.1.1"},{"address":"2.2.2.2"},{"address":"2001:fefe"}]}
+
+Here's the list of steps I went through:
+
+GET: prove a record doesn't exist
+POST: create it
+GET: prove it exists
+DELETE: delete it
+GET: prove it doesn't exist
+POST: create it
+GET: prove it exists
+
+The host that the server is running on is a vm called graphite.devnull.org and it's running on port 8080.
+The hostname record I'm mucking about with is foo.bar.baz.
+
+dhawth@david-2.local ~ $ curl -v --digest --user digest_user -X GET http://graphite.devnull.org:8080/fqdn/1/foo.bar.baz
+Enter host password for user 'digest_user':
+* About to connect() to graphite.devnull.org port 8080 (#0)
+*   Trying 172.16.1.31...
+* connected
+* Connected to graphite.devnull.org (172.16.1.31) port 8080 (#0)
+* Server auth using Digest with user 'digest_user'
+> GET /fqdn/1/foo.bar.baz HTTP/1.1
+> User-Agent: curl/7.24.0 (x86_64-apple-darwin12.0) libcurl/7.24.0 OpenSSL/0.9.8y zlib/1.2.5
+> Host: graphite.devnull.org:8080
+> Accept: */*
+> 
+< HTTP/1.1 401 Unauthorized
+< WWW-Authenticate: Digest realm="MyRealm", domain="", nonce="HvNlyhzfjN0Q6QnJUQBpgU39dc5S7Nx7", algorithm=MD5, qop="auth", stale=false
+< Cache-Control: must-revalidate,no-cache,no-store
+< Content-Type: text/html;charset=ISO-8859-1
+< Content-Length: 1291
+< Server: Jetty(8.y.z-SNAPSHOT)
+< 
+* Ignoring the response-body
+* Connection #0 to host graphite.devnull.org left intact
+* Issue another request to this URL: 'http://graphite.devnull.org:8080/fqdn/1/foo.bar.baz'
+* Re-using existing connection! (#0) with host (nil)
+* Connected to (nil) (172.16.1.31) port 8080 (#0)
+* Server auth using Digest with user 'digest_user'
+> GET /fqdn/1/foo.bar.baz HTTP/1.1
+> Authorization: Digest username="digest_user", realm="MyRealm", nonce="HvNlyhzfjN0Q6QnJUQBpgU39dc5S7Nx7", uri="/fqdn/1/foo.bar.baz", cnonce="MTM4Mzk1", nc=00000001, qop="auth", response="d07f11ad40ec6fe5d3c59d55743ac3ba", algorithm="MD5"
+> User-Agent: curl/7.24.0 (x86_64-apple-darwin12.0) libcurl/7.24.0 OpenSSL/0.9.8y zlib/1.2.5
+> Host: graphite.devnull.org:8080
+> Accept: */*
+> 
+< HTTP/1.1 404 Not Found
+< Content-Type: application/json
+< Transfer-Encoding: chunked
+< Server: Jetty(8.y.z-SNAPSHOT)
+< 
+* Connection #0 to host (nil) left intact
+{"error":"no record for hostname foo.bar.baz"}
+* Closing connection #0
+
+dhawth@david-2.local ~ $ curl -d @input -v -H "Content-Type: application/json" --digest --user digest_user -X POST http://graphite.devnull.org:8080/fqdn/1/foo.bar.baz 
+Enter host password for user 'digest_user':
+* About to connect() to graphite.devnull.org port 8080 (#0)
+*   Trying 172.16.1.31...
+* connected
+* Connected to graphite.devnull.org (172.16.1.31) port 8080 (#0)
+* Server auth using Digest with user 'digest_user'
+> POST /fqdn/1/foo.bar.baz HTTP/1.1
+> User-Agent: curl/7.24.0 (x86_64-apple-darwin12.0) libcurl/7.24.0 OpenSSL/0.9.8y zlib/1.2.5
+> Host: graphite.devnull.org:8080
+> Accept: */*
+> Content-Type: application/json
+> Content-Length: 0
+> 
+< HTTP/1.1 401 Unauthorized
+< WWW-Authenticate: Digest realm="MyRealm", domain="", nonce="dhhTj7ODoeFVvT2aGFm8yXy7/SSSLCTh", algorithm=MD5, qop="auth", stale=false
+< Cache-Control: must-revalidate,no-cache,no-store
+< Content-Type: text/html;charset=ISO-8859-1
+< Content-Length: 1291
+< Server: Jetty(8.y.z-SNAPSHOT)
+< 
+* Ignoring the response-body
+* Connection #0 to host graphite.devnull.org left intact
+* Issue another request to this URL: 'http://graphite.devnull.org:8080/fqdn/1/foo.bar.baz'
+* Re-using existing connection! (#0) with host (nil)
+* Connected to (nil) (172.16.1.31) port 8080 (#0)
+* Server auth using Digest with user 'digest_user'
+> POST /fqdn/1/foo.bar.baz HTTP/1.1
+> Authorization: Digest username="digest_user", realm="MyRealm", nonce="dhhTj7ODoeFVvT2aGFm8yXy7/SSSLCTh", uri="/fqdn/1/foo.bar.baz", cnonce="MTM4Mzk1", nc=00000001, qop="auth", response="0d208a93da85e6d44782264e18a5f0b5", algorithm="MD5"
+> User-Agent: curl/7.24.0 (x86_64-apple-darwin12.0) libcurl/7.24.0 OpenSSL/0.9.8y zlib/1.2.5
+> Host: graphite.devnull.org:8080
+> Accept: */*
+> Content-Type: application/json
+> Content-Length: 82
+> 
+* upload completely sent off: 82 out of 82 bytes
+< HTTP/1.1 200 OK
+< Content-Type: application/json
+< Content-Length: 0
+< Server: Jetty(8.y.z-SNAPSHOT)
+< 
+* Connection #0 to host (nil) left intact
+* Closing connection #0
+
+dhawth@david-2.local ~ $ curl -v --digest --user digest_user -X GET http://graphite.devnull.org:8080/fqdn/1/foo.bar.baz
+Enter host password for user 'digest_user':
+* About to connect() to graphite.devnull.org port 8080 (#0)
+*   Trying 172.16.1.31...
+* connected
+* Connected to graphite.devnull.org (172.16.1.31) port 8080 (#0)
+* Server auth using Digest with user 'digest_user'
+> GET /fqdn/1/foo.bar.baz HTTP/1.1
+> User-Agent: curl/7.24.0 (x86_64-apple-darwin12.0) libcurl/7.24.0 OpenSSL/0.9.8y zlib/1.2.5
+> Host: graphite.devnull.org:8080
+> Accept: */*
+> 
+< HTTP/1.1 401 Unauthorized
+< WWW-Authenticate: Digest realm="MyRealm", domain="", nonce="zPYz9zm3baPcNM/sGORtXZgkOVTwbdtj", algorithm=MD5, qop="auth", stale=false
+< Cache-Control: must-revalidate,no-cache,no-store
+< Content-Type: text/html;charset=ISO-8859-1
+< Content-Length: 1291
+< Server: Jetty(8.y.z-SNAPSHOT)
+< 
+* Ignoring the response-body
+* Connection #0 to host graphite.devnull.org left intact
+* Issue another request to this URL: 'http://graphite.devnull.org:8080/fqdn/1/foo.bar.baz'
+* Re-using existing connection! (#0) with host (nil)
+* Connected to (nil) (172.16.1.31) port 8080 (#0)
+* Server auth using Digest with user 'digest_user'
+> GET /fqdn/1/foo.bar.baz HTTP/1.1
+> Authorization: Digest username="digest_user", realm="MyRealm", nonce="zPYz9zm3baPcNM/sGORtXZgkOVTwbdtj", uri="/fqdn/1/foo.bar.baz", cnonce="MTM4Mzk1", nc=00000001, qop="auth", response="5371170b255e8679466cb6e72801f7e8", algorithm="MD5"
+> User-Agent: curl/7.24.0 (x86_64-apple-darwin12.0) libcurl/7.24.0 OpenSSL/0.9.8y zlib/1.2.5
+> Host: graphite.devnull.org:8080
+> Accept: */*
+> 
+< HTTP/1.1 200 OK
+< Content-Type: application/json
+< Transfer-Encoding: chunked
+< Server: Jetty(8.y.z-SNAPSHOT)
+< 
+* Connection #0 to host (nil) left intact
+{"fqdn":"foo.bar.baz","ttl":10,"records":[{"address":"1.1.1.1","type":"A"},{"address":"2.2.2.2","type":"A"},{"address":"2001:fefe","type":"AAAA"}]}
+* Closing connection #0
+
+dhawth@david-2.local ~ $ curl -v --digest --user digest_user -X DELETE http://graphite.devnull.org:8080/fqdn/1/foo.bar.baz
+Enter host password for user 'digest_user':
+* About to connect() to graphite.devnull.org port 8080 (#0)
+*   Trying 172.16.1.31...
+* connected
+* Connected to graphite.devnull.org (172.16.1.31) port 8080 (#0)
+* Server auth using Digest with user 'digest_user'
+> DELETE /fqdn/1/foo.bar.baz HTTP/1.1
+> User-Agent: curl/7.24.0 (x86_64-apple-darwin12.0) libcurl/7.24.0 OpenSSL/0.9.8y zlib/1.2.5
+> Host: graphite.devnull.org:8080
+> Accept: */*
+> 
+< HTTP/1.1 401 Unauthorized
+< WWW-Authenticate: Digest realm="MyRealm", domain="", nonce="+nFzV6dw2oWgknaDrJmjY+kgCfTZ/Ei8", algorithm=MD5, qop="auth", stale=false
+< Cache-Control: must-revalidate,no-cache,no-store
+< Content-Type: text/html;charset=ISO-8859-1
+< Content-Length: 1291
+< Server: Jetty(8.y.z-SNAPSHOT)
+< 
+* Ignoring the response-body
+* Connection #0 to host graphite.devnull.org left intact
+* Issue another request to this URL: 'http://graphite.devnull.org:8080/fqdn/1/foo.bar.baz'
+* Re-using existing connection! (#0) with host (nil)
+* Connected to (nil) (172.16.1.31) port 8080 (#0)
+* Server auth using Digest with user 'digest_user'
+> DELETE /fqdn/1/foo.bar.baz HTTP/1.1
+> Authorization: Digest username="digest_user", realm="MyRealm", nonce="+nFzV6dw2oWgknaDrJmjY+kgCfTZ/Ei8", uri="/fqdn/1/foo.bar.baz", cnonce="MTM4Mzk1", nc=00000001, qop="auth", response="63d7e148fe7eef6af9e8add89cca6427", algorithm="MD5"
+> User-Agent: curl/7.24.0 (x86_64-apple-darwin12.0) libcurl/7.24.0 OpenSSL/0.9.8y zlib/1.2.5
+> Host: graphite.devnull.org:8080
+> Accept: */*
+> 
+< HTTP/1.1 200 OK
+< Content-Length: 0
+< Server: Jetty(8.y.z-SNAPSHOT)
+< 
+* Connection #0 to host (nil) left intact
+* Closing connection #0
+
+dhawth@david-2.local ~ $ curl -v --digest --user digest_user -X GET http://graphite.devnull.org:8080/fqdn/1/foo.bar.baz
+Enter host password for user 'digest_user':
+* About to connect() to graphite.devnull.org port 8080 (#0)
+*   Trying 172.16.1.31...
+* connected
+* Connected to graphite.devnull.org (172.16.1.31) port 8080 (#0)
+* Server auth using Digest with user 'digest_user'
+> GET /fqdn/1/foo.bar.baz HTTP/1.1
+> User-Agent: curl/7.24.0 (x86_64-apple-darwin12.0) libcurl/7.24.0 OpenSSL/0.9.8y zlib/1.2.5
+> Host: graphite.devnull.org:8080
+> Accept: */*
+> 
+< HTTP/1.1 401 Unauthorized
+< WWW-Authenticate: Digest realm="MyRealm", domain="", nonce="Si66ZSYy8VMxHti/PXcZ1dmuujsGByPQ", algorithm=MD5, qop="auth", stale=false
+< Cache-Control: must-revalidate,no-cache,no-store
+< Content-Type: text/html;charset=ISO-8859-1
+< Content-Length: 1291
+< Server: Jetty(8.y.z-SNAPSHOT)
+< 
+* Ignoring the response-body
+* Connection #0 to host graphite.devnull.org left intact
+* Issue another request to this URL: 'http://graphite.devnull.org:8080/fqdn/1/foo.bar.baz'
+* Re-using existing connection! (#0) with host (nil)
+* Connected to (nil) (172.16.1.31) port 8080 (#0)
+* Server auth using Digest with user 'digest_user'
+> GET /fqdn/1/foo.bar.baz HTTP/1.1
+> Authorization: Digest username="digest_user", realm="MyRealm", nonce="Si66ZSYy8VMxHti/PXcZ1dmuujsGByPQ", uri="/fqdn/1/foo.bar.baz", cnonce="MTM4Mzk1", nc=00000001, qop="auth", response="f0138911690d08eee54e618bfc108b3c", algorithm="MD5"
+> User-Agent: curl/7.24.0 (x86_64-apple-darwin12.0) libcurl/7.24.0 OpenSSL/0.9.8y zlib/1.2.5
+> Host: graphite.devnull.org:8080
+> Accept: */*
+> 
+< HTTP/1.1 404 Not Found
+< Content-Type: application/json
+< Transfer-Encoding: chunked
+< Server: Jetty(8.y.z-SNAPSHOT)
+< 
+* Connection #0 to host (nil) left intact
+{"error":"no record for hostname foo.bar.baz"}
+* Closing connection #0
+
+dhawth@david-2.local ~ $ curl -d @input -v -H "Content-Type: application/json" --digest --user digest_user -X POST http://graphite.devnull.org:8080/fqdn/1/foo.bar.baz 
+Enter host password for user 'digest_user':
+* About to connect() to graphite.devnull.org port 8080 (#0)
+*   Trying 172.16.1.31...
+* connected
+* Connected to graphite.devnull.org (172.16.1.31) port 8080 (#0)
+* Server auth using Digest with user 'digest_user'
+> POST /fqdn/1/foo.bar.baz HTTP/1.1
+> User-Agent: curl/7.24.0 (x86_64-apple-darwin12.0) libcurl/7.24.0 OpenSSL/0.9.8y zlib/1.2.5
+> Host: graphite.devnull.org:8080
+> Accept: */*
+> Content-Type: application/json
+> Content-Length: 0
+> 
+< HTTP/1.1 401 Unauthorized
+< WWW-Authenticate: Digest realm="MyRealm", domain="", nonce="G9Fi1AZU6LvSTx5eGSVL/6yBr7mLkOyb", algorithm=MD5, qop="auth", stale=false
+< Cache-Control: must-revalidate,no-cache,no-store
+< Content-Type: text/html;charset=ISO-8859-1
+< Content-Length: 1291
+< Server: Jetty(8.y.z-SNAPSHOT)
+< 
+* Ignoring the response-body
+* Connection #0 to host graphite.devnull.org left intact
+* Issue another request to this URL: 'http://graphite.devnull.org:8080/fqdn/1/foo.bar.baz'
+* Re-using existing connection! (#0) with host (nil)
+* Connected to (nil) (172.16.1.31) port 8080 (#0)
+* Server auth using Digest with user 'digest_user'
+> POST /fqdn/1/foo.bar.baz HTTP/1.1
+> Authorization: Digest username="digest_user", realm="MyRealm", nonce="G9Fi1AZU6LvSTx5eGSVL/6yBr7mLkOyb", uri="/fqdn/1/foo.bar.baz", cnonce="MTM4Mzk1", nc=00000001, qop="auth", response="ddb47ffb4fba0a9b19b74594e1d4e340", algorithm="MD5"
+> User-Agent: curl/7.24.0 (x86_64-apple-darwin12.0) libcurl/7.24.0 OpenSSL/0.9.8y zlib/1.2.5
+> Host: graphite.devnull.org:8080
+> Accept: */*
+> Content-Type: application/json
+> Content-Length: 82
+> 
+* upload completely sent off: 82 out of 82 bytes
+< HTTP/1.1 200 OK
+< Content-Type: application/json
+< Content-Length: 0
+< Server: Jetty(8.y.z-SNAPSHOT)
+< 
+* Connection #0 to host (nil) left intact
+* Closing connection #0
+
+dhawth@david-2.local ~ $ curl -v --digest --user digest_user -X GET http://graphite.devnull.org:8080/fqdn/1/foo.bar.baz
+Enter host password for user 'digest_user':
+* About to connect() to graphite.devnull.org port 8080 (#0)
+*   Trying 172.16.1.31...
+* connected
+* Connected to graphite.devnull.org (172.16.1.31) port 8080 (#0)
+* Server auth using Digest with user 'digest_user'
+> GET /fqdn/1/foo.bar.baz HTTP/1.1
+> User-Agent: curl/7.24.0 (x86_64-apple-darwin12.0) libcurl/7.24.0 OpenSSL/0.9.8y zlib/1.2.5
+> Host: graphite.devnull.org:8080
+> Accept: */*
+> 
+< HTTP/1.1 401 Unauthorized
+< WWW-Authenticate: Digest realm="MyRealm", domain="", nonce="+GUaDmFATBBC6/giKJ43NwnX+4qtRQ2W", algorithm=MD5, qop="auth", stale=false
+< Cache-Control: must-revalidate,no-cache,no-store
+< Content-Type: text/html;charset=ISO-8859-1
+< Content-Length: 1291
+< Server: Jetty(8.y.z-SNAPSHOT)
+< 
+* Ignoring the response-body
+* Connection #0 to host graphite.devnull.org left intact
+* Issue another request to this URL: 'http://graphite.devnull.org:8080/fqdn/1/foo.bar.baz'
+* Re-using existing connection! (#0) with host (nil)
+* Connected to (nil) (172.16.1.31) port 8080 (#0)
+* Server auth using Digest with user 'digest_user'
+> GET /fqdn/1/foo.bar.baz HTTP/1.1
+> Authorization: Digest username="digest_user", realm="MyRealm", nonce="+GUaDmFATBBC6/giKJ43NwnX+4qtRQ2W", uri="/fqdn/1/foo.bar.baz", cnonce="MTM4Mzk1", nc=00000001, qop="auth", response="d12b2347e6537c42c0a0b9c7150d5e26", algorithm="MD5"
+> User-Agent: curl/7.24.0 (x86_64-apple-darwin12.0) libcurl/7.24.0 OpenSSL/0.9.8y zlib/1.2.5
+> Host: graphite.devnull.org:8080
+> Accept: */*
+> 
+< HTTP/1.1 200 OK
+< Content-Type: application/json
+< Transfer-Encoding: chunked
+< Server: Jetty(8.y.z-SNAPSHOT)
+< 
+* Connection #0 to host (nil) left intact
+{"fqdn":"foo.bar.baz","ttl":10,"records":[{"address":"1.1.1.1","type":"A"},{"address":"2.2.2.2","type":"A"},{"address":"2001:fefe","type":"AAAA"}]}
+* Closing connection #0
