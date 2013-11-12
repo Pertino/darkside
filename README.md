@@ -36,10 +36,7 @@ The output jar file will be in the target/ directory.
 
 From scratch on an ubuntu box:
 
-apt-get install maven
-apt-get install git
-apt-get install gcc
-apt-get install openjdk-7-jdk openjdk-7-jre
+apt-get install maven git gcc openjdk-7-jdk openjdk-7-jre
 
 Note that you may need to run update-alternatives --config java to change your JVM to 7
 if you have both installed on your system.
