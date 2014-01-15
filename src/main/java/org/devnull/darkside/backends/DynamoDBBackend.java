@@ -1,5 +1,6 @@
 package org.devnull.darkside.backends;
 
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
 import org.apache.log4j.*;
 
 import com.amazonaws.auth.BasicAWSCredentials;
@@ -39,7 +40,11 @@ public class DynamoDBBackend extends JsonBase implements BackendDB
 			dynamo.setEndpoint(config.endPoint);
 		}
 
-		dynamoMapper = new DynamoDBMapper(dynamo);
+		DynamoDBMapperConfig mapperConfig = new DynamoDBMapperConfig(
+			new DynamoDBMapperConfig.TableNameOverride(config.tableName)
+		);
+
+		dynamoMapper = new DynamoDBMapper(dynamo, mapperConfig);
 
 		DescribeTableRequest dtr = new DescribeTableRequest().withTableName(config.tableName);
 		TableDescription tableDescription = dynamo.describeTable(dtr).getTable();
