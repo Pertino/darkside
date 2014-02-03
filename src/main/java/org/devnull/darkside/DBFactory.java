@@ -1,10 +1,9 @@
 package org.devnull.darkside;
 
-import org.apache.log4j.*;
-
 import com.fasterxml.jackson.databind.JsonNode;
-
-import org.devnull.darkside.backends.*;
+import org.apache.log4j.Logger;
+import org.devnull.darkside.backends.DynamoDBBackend;
+import org.devnull.darkside.backends.LevelDBBackend;
 
 public class DBFactory
 {

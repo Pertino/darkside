@@ -1,9 +1,9 @@
 package org.devnull.darkside.configs;
 
+import org.devnull.darkside.JsonBase;
+
 import java.util.HashMap;
 import java.util.Map;
-
-import org.devnull.darkside.JsonBase;
 
 public class DarksideConfig extends JsonBase
 {

@@ -1,19 +1,17 @@
 package org.devnull.darkside.backends;
 
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
-import org.apache.log4j.*;
-
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
 import com.amazonaws.services.dynamodbv2.model.DescribeTableRequest;
 import com.amazonaws.services.dynamodbv2.model.TableDescription;
 import com.amazonaws.services.dynamodbv2.model.TableStatus;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.fasterxml.jackson.databind.JsonNode;
-
+import org.apache.log4j.Logger;
 import org.devnull.darkside.BackendDB;
-import org.devnull.darkside.DNSRecord;
+import org.devnull.darkside.DNSRecordSet;
 import org.devnull.darkside.JsonBase;
 import org.devnull.darkside.configs.DynamoConfig;
 import org.devnull.statsd_client.StatsObject;
@@ -58,14 +56,14 @@ public class DynamoDBBackend extends JsonBase implements BackendDB
 		}
 	}
 
-	public void put(String fqdn, DNSRecord record) throws Exception
+	public void put(DNSRecordSet record) throws Exception
 	{
 		so.increment("DynamoDBBackend.puts.total");
 
 		try
 		{
 			DynamoRecord r = new DynamoRecord();
-			r.setFqdn(fqdn);
+			r.setFqdn(record.getFqdn());
 			r.setRecord(record.toString());
 			dynamoMapper.save(r);
 			so.increment("DynamoDBBackend.puts.ok");
@@ -78,18 +76,19 @@ public class DynamoDBBackend extends JsonBase implements BackendDB
 		}
 	}
 
-	public DNSRecord get(String fqdn) throws Exception
+	public DNSRecordSet get(String fqdn) throws Exception
 	{
 		try
 		{
 			DynamoRecord r = dynamoMapper.load(DynamoRecord.class, fqdn);
 			so.increment("DynamoDBBackend.gets.ok");
+
 			if (r == null)
 			{
 				return null;
 			}
 
-			return mapper.readValue(r.getRecord(), DNSRecord.class);
+			return mapper.readValue(r.getRecord(), DNSRecordSet.class);
 		}
 		catch (Exception e)
 		{

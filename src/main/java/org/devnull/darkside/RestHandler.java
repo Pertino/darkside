@@ -1,13 +1,12 @@
 package org.devnull.darkside;
 
-import org.apache.log4j.*;
+import org.apache.log4j.Logger;
+import org.devnull.darkside.configs.DarksideConfig;
 import org.devnull.statsd_client.StatsObject;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
-import org.devnull.darkside.configs.DarksideConfig;
 
 /**
  * works for path /fqdn/1 which is the version of this API implementation
@@ -33,6 +32,7 @@ public class RestHandler
 	/**
 	 * this should return 404 not found if the record isn't there
 	 * and some other thing if the fqdn isn't specified, etc.
+	 *
 	 * @return Response object for request
 	 */
 	@GET
@@ -47,7 +47,7 @@ public class RestHandler
 
 		so.increment("RestHandler.gets.total");
 
-		DNSRecord r = null;
+		DNSRecordSet r = null;
 
 		try
 		{
@@ -64,7 +64,8 @@ public class RestHandler
 		{
 			so.increment("RestHandler.gets.not_found");
 			// return 404
-			return Response.status(404).entity(new HandlerException("no record for hostname " + fqdn)).build();
+			return Response.status(404).entity(
+				new HandlerException("no record for hostname " + fqdn)).build();
 		}
 
 		so.increment("RestHandler.gets.found");
@@ -81,18 +82,17 @@ public class RestHandler
 		return Response.ok(r).build();
 	}
 
-
 	/**
-	 * this should return some kind of 4xx for insufficient data,
-	 * with associated error, etc
-	 * and some kind of 200 OK with a result: true for success.
-	 * @return Response object for request
+	 * @param fqdn      the hostname to update records for
+	 * @param recordSet the set of records to insert for the hostname.  All updates must include *all* of the
+	 *                  records relevant for the given fqdn.
+	 * @return 200 OK or something else
 	 */
 	@POST
 	@Path("/{fqdn}")
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
-	public Response post(@PathParam("fqdn") String fqdn, DNSRecord record)
+	public Response post(@PathParam("fqdn") String fqdn, DNSRecordSet recordSet)
 	{
 		so.increment("RestHandler.posts.total");
 
@@ -101,18 +101,18 @@ public class RestHandler
 			return Response.serverError().entity(new HandlerException("fqdn cannot be blank")).build();
 		}
 
-		if (record == null)
+		if (recordSet == null)
 		{
 			return Response.status(400).entity(new HandlerException("missing record body")).build();
 		}
 
-		if (record.getRecords() == null)
+		if (recordSet.getRecords() == null)
 		{
 			so.increment("RestHandler.posts.no_records");
 			return Response.status(400).entity(new HandlerException("no records were specified")).build();
 		}
 
-		if (record.getRecords().size() == 0)
+		if (recordSet.getRecords().size() == 0)
 		{
 			so.increment("RestHandler.posts.no_records");
 			return Response.status(400).entity(new HandlerException("records list was empty")).build();
@@ -120,14 +120,15 @@ public class RestHandler
 
 		try
 		{
-			record.setFqdn(fqdn);
-			db.put(fqdn, record);
+			recordSet.setFqdn(fqdn);
+			db.put(recordSet);
 			so.increment("RestHandler.posts.success");
 		}
 		catch (Exception e)
 		{
 			so.increment("RestHandler.posts.exceptions");
-			return Response.serverError().entity(new HandlerException("exception creating item: " + e)).build();
+			return Response.serverError().entity(
+				new HandlerException("exception creating item: " + e)).build();
 		}
 
 		return Response.ok().build();
@@ -135,6 +136,7 @@ public class RestHandler
 
 	/**
 	 * this should return 200 OK all the time
+	 *
 	 * @return Response object for request
 	 */
 	@DELETE
@@ -156,7 +158,8 @@ public class RestHandler
 		catch (Exception e)
 		{
 			so.increment("RestHandler.deletes.exceptions");
-			return Response.serverError().entity(new HandlerException("exception deleting item: " + e)).build();
+			return Response.serverError().entity(
+				new HandlerException("exception deleting item: " + e)).build();
 		}
 
 		return Response.ok().build();

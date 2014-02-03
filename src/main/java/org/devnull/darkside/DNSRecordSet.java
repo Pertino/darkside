@@ -1,11 +1,13 @@
 package org.devnull.darkside;
 
+import org.devnull.darkside.records.Record;
+
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
-import java.util.*;
+import java.util.List;
 
 @XmlAccessorType(XmlAccessType.FIELD)
-public class DNSRecord extends JsonBase
+public class DNSRecordSet extends JsonBase
 {
 	/**
 	 * A copy of the fqdn that this record is for
@@ -14,7 +16,7 @@ public class DNSRecord extends JsonBase
 
 	/**
 	 * default TTL for responses is configurable in the DarksideConfig, and is
-	 * used when the record is served if this value is still null, not when it 
+	 * used when the record is served if this value is still null, not when it
 	 * is stored.
 	 */
 	private Integer ttl = null;
@@ -22,7 +24,7 @@ public class DNSRecord extends JsonBase
 	/**
 	 * list of IP addresses associated with the fqdn this DNSRecord is for
 	 */
-	private List<IPRecord> records = null;
+	private List<Record> records = null;
 
 	public Integer getTtl()
 	{
@@ -34,12 +36,12 @@ public class DNSRecord extends JsonBase
 		this.ttl = ttl;
 	}
 
-	public List<IPRecord> getRecords()
+	public List<Record> getRecords()
 	{
 		return records;
 	}
 
-	public void setRecords(List<IPRecord> records)
+	public void setRecords(List<Record> records)
 	{
 		this.records = records;
 	}

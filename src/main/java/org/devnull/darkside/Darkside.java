@@ -1,29 +1,29 @@
 package org.devnull.darkside;
 
 import com.sun.jersey.spi.container.servlet.ServletContainer;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
-import org.eclipse.jetty.util.thread.QueuedThreadPool;
-
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
+import org.devnull.darkside.configs.DarksideConfig;
+import org.devnull.statsd_client.Shipper;
+import org.devnull.statsd_client.ShipperFactory;
 import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.security.HashLoginService;
 import org.eclipse.jetty.security.SecurityHandler;
 import org.eclipse.jetty.security.authentication.DigestAuthenticator;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.security.Constraint;
 import org.eclipse.jetty.util.security.Password;
+import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
-import org.devnull.statsd_client.*;
-
-import org.devnull.darkside.configs.DarksideConfig;
-
+import java.io.File;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.HashSet;
-
-import org.apache.log4j.*;
-import java.io.File;
 
 public class Darkside extends JsonBase implements Runnable
 {
@@ -116,6 +116,9 @@ public class Darkside extends JsonBase implements Runnable
 
 		server = new Server(new InetSocketAddress(config.listenAddress, config.listenPort));
 
+		//
+		// And this is how we tell Jetty about the servlet context that we have created
+		//
 		ServletHolder servletHolder = new ServletHolder(ServletContainer.class);
 
 		servletHolder.setInitParameter("com.sun.jersey.config.property.resourceConfigClass",
@@ -231,7 +234,7 @@ public class Darkside extends JsonBase implements Runnable
 		constraintMapping.setPathSpec("/");
 		constraintMapping.setConstraint(constraint);
 		constraintSecurityHandler.setConstraintMappings(Arrays.asList(constraintMapping),
-			new HashSet<String>(Arrays.asList(roles)));
+								new HashSet<String>(Arrays.asList(roles)));
 		constraintSecurityHandler.setAuthenticator(new DigestAuthenticator());
 		constraintSecurityHandler.setLoginService(loginService);
 		return constraintSecurityHandler;

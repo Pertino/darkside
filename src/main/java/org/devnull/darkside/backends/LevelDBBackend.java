@@ -1,13 +1,10 @@
 package org.devnull.darkside.backends;
 
-import org.apache.log4j.*;
-
 import com.fasterxml.jackson.databind.JsonNode;
-
-import org.devnull.darkside.DNSRecord;
-import org.devnull.darkside.JsonBase;
+import org.apache.log4j.Logger;
 import org.devnull.darkside.BackendDB;
-
+import org.devnull.darkside.DNSRecordSet;
+import org.devnull.darkside.JsonBase;
 import org.devnull.darkside.configs.LevelDBConfig;
 import org.devnull.statsd_client.StatsObject;
 import org.iq80.leveldb.DB;
@@ -16,7 +13,7 @@ import org.iq80.leveldb.Options;
 import java.io.File;
 import java.io.IOException;
 
-import static org.iq80.leveldb.impl.Iq80DBFactory.*;
+import static org.iq80.leveldb.impl.Iq80DBFactory.factory;
 
 public class LevelDBBackend extends JsonBase implements BackendDB
 {
@@ -36,11 +33,11 @@ public class LevelDBBackend extends JsonBase implements BackendDB
 		db = factory.open(new File(config.dbPath), options);
 	}
 
-	public void put(String fqdn, DNSRecord record) throws Exception
+	public void put(DNSRecordSet record) throws Exception
 	{
 		try
 		{
-			db.put(fqdn.getBytes(), mapper.writeValueAsBytes(record));
+			db.put(record.getFqdn().getBytes(), mapper.writeValueAsBytes(record));
 			so.increment("LevelDBBackend.puts.ok");
 		}
 		catch (Exception e)
@@ -51,12 +48,11 @@ public class LevelDBBackend extends JsonBase implements BackendDB
 		}
 	}
 
-	public DNSRecord get(String fqdn) throws Exception
+	public DNSRecordSet get(String fqdn) throws Exception
 	{
 		try
 		{
 			byte[] res = db.get(fqdn.getBytes());
-
 
 			if (res == null)
 			{
@@ -64,7 +60,7 @@ public class LevelDBBackend extends JsonBase implements BackendDB
 				return null;
 			}
 
-			DNSRecord r = mapper.readValue(res, DNSRecord.class);
+			DNSRecordSet r = mapper.readValue(res, DNSRecordSet.class);
 			so.increment("LevelDBBackend.gets.ok");
 
 			return r;

@@ -8,6 +8,8 @@ import org.devnull.darkside.configs.DynamoConfig;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
+import org.devnull.darkside.records.ARecord;
+import org.devnull.darkside.records.Record;
 import org.devnull.statsd_client.StatsObject;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -172,15 +174,23 @@ public class DynamoDBBackendTest extends JsonBase
 	@Test
 	public void testAll() throws Exception
 	{
-		List<IPRecord> l = new ArrayList<IPRecord>();
-		l.add(new IPRecord("1.1.1.1"));
-		l.add(new IPRecord("2001::fefe"));
-		DNSRecord r = new DNSRecord();
+		List<Record> l = new ArrayList<Record>();
+
+		ARecord a = new ARecord();
+		a.setAddress("1.1.1.1");
+		l.add(a);
+
+		a = new ARecord();
+		a.setAddress("2001:fefe");
+		l.add(a);
+
+		DNSRecordSet r = new DNSRecordSet();
 		r.setRecords(l);
+		r.setFqdn("foo.bar.baz");
 
 		assertNull(db.get("foo.bar.baz"));
 
-		db.put("foo.bar.baz", r);
+		db.put(r);
 		assertNotNull(db.get("foo.bar.baz"));
 
 		r = db.get("foo.bar.baz");

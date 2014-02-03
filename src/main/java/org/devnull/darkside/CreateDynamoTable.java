@@ -3,12 +3,15 @@ package org.devnull.darkside;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.model.*;
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
+import org.devnull.darkside.configs.DynamoConfig;
 
 import java.io.File;
-import java.util.*;
-
-import org.devnull.darkside.configs.DynamoConfig;
-import org.apache.log4j.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class CreateDynamoTable extends JsonBase
 {
@@ -21,7 +24,7 @@ public class CreateDynamoTable extends JsonBase
 	 * <p/>
 	 * Command line args:
 	 * <p/>
- 	 * -c <dynamo.conf>		Path to the json-based configuration file, required
+	 * -c <dynamo.conf>		Path to the json-based configuration file, required
 	 * -l <log4j.conf>		Path to a log4j properties file, optional
 	 *
 	 * @param args The String[] array of the command-line arguments
@@ -91,7 +94,8 @@ public class CreateDynamoTable extends JsonBase
 					withAttributeType(ScalarAttributeType.S)
 			);
 
-			AmazonDynamoDBClient client = new AmazonDynamoDBClient(new BasicAWSCredentials(config.accessKey, config.secretKey));
+			AmazonDynamoDBClient client = new AmazonDynamoDBClient(
+				new BasicAWSCredentials(config.accessKey, config.secretKey));
 			client.setEndpoint(config.endPoint);
 
 			client.createTable(

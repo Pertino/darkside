@@ -24,6 +24,8 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
+import org.devnull.darkside.records.ARecord;
+import org.devnull.darkside.records.Record;
 import org.devnull.statsd_client.StatsObject;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
@@ -300,7 +302,7 @@ public class RestHandlerDynamoDBTest extends JsonBase
 
 		log.debug("creating an fqdn that does not exist in the db with a null record");
 
-		DNSRecord r = new DNSRecord();
+		DNSRecordSet r = new DNSRecordSet();
 		response = getResponse(Type.POST, true, "www.google.com", null);
 		entity = response.getEntity();
 		status = response.getStatusLine().getStatusCode();
@@ -316,7 +318,7 @@ public class RestHandlerDynamoDBTest extends JsonBase
 
 		log.debug("creating an fqdn that does not exist in the db with incomplete records");
 
-		r = new DNSRecord();
+		r = new DNSRecordSet();
 		response = getResponse(Type.POST, true, "www.google.com", r);
 		entity = response.getEntity();
 		status = response.getStatusLine().getStatusCode();
@@ -338,8 +340,8 @@ public class RestHandlerDynamoDBTest extends JsonBase
 
 		log.debug("creating an fqdn that does not exist in the db with incomplete records");
 
-		r = new DNSRecord();
-		r.setRecords(new ArrayList<IPRecord>());
+		r = new DNSRecordSet();
+		r.setRecords(new ArrayList<Record>());
 		response = getResponse(Type.POST, true, "www.google.com", r);
 		entity = response.getEntity();
 		status = response.getStatusLine().getStatusCode();
@@ -361,9 +363,11 @@ public class RestHandlerDynamoDBTest extends JsonBase
 
 		log.debug("creating an fqdn that does not exist in the db with complete record with no ttl");
 
-		r = new DNSRecord();
-		List<IPRecord> ips = new ArrayList<IPRecord>();
-		ips.add(new IPRecord("1.1.1.1"));
+		r = new DNSRecordSet();
+		List<Record> ips = new ArrayList<Record>();
+		ARecord a = new ARecord();
+		a.setAddress("1.1.1.1");
+		ips.add(a);
 		r.setRecords(ips);
 		response = getResponse(Type.POST, true, "www.google.com", r);
 		entity = response.getEntity();
@@ -378,9 +382,11 @@ public class RestHandlerDynamoDBTest extends JsonBase
 
 		// post test 4: post with complete record with specific ttl
 
-		r = new DNSRecord();
-		ips = new ArrayList<IPRecord>();
-		ips.add(new IPRecord("1.1.1.1"));
+		r = new DNSRecordSet();
+		ips = new ArrayList<Record>();
+		a = new ARecord();
+		a.setAddress("1.1.1.1");
+		ips.add(a);
 		r.setRecords(ips);
 		r.setTtl(100);
 		response = getResponse(Type.POST, true, "ttl100.google.com", r);
@@ -407,7 +413,7 @@ public class RestHandlerDynamoDBTest extends JsonBase
 
 		assertNotNull(line);
 		assertTrue(line, line.equals(
-			"{\"fqdn\":\"www.google.com\",\"ttl\":300,\"records\":[{\"address\":\"1.1.1.1\",\"type\":\"A\"}]}"));
+			"{\"fqdn\":\"www.google.com\",\"ttl\":300,\"records\":[{\"type\":\"A\",\"address\":\"1.1.1.1\"}]}"));
 
 		if (entity != null)
 		{
@@ -427,7 +433,7 @@ public class RestHandlerDynamoDBTest extends JsonBase
 
 		assertNotNull(line);
 		assertTrue(line, line.equals(
-			"{\"fqdn\":\"ttl100.google.com\",\"ttl\":100,\"records\":[{\"address\":\"1.1.1.1\",\"type\":\"A\"}]}"));
+			"{\"fqdn\":\"ttl100.google.com\",\"ttl\":100,\"records\":[{\"type\":\"A\",\"address\":\"1.1.1.1\"}]}"));
 
 		if (entity != null)
 		{
@@ -484,7 +490,7 @@ public class RestHandlerDynamoDBTest extends JsonBase
 		};
 	}
 
-	private HttpResponse getResponse(Type type, boolean useAuth, String fqdn, DNSRecord r) throws Exception
+	private HttpResponse getResponse(Type type, boolean useAuth, String fqdn, DNSRecordSet r) throws Exception
 	{
 		String PATH_BASE = "/fqdn/1/";
 
