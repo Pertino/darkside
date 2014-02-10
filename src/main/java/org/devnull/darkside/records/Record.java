@@ -16,6 +16,7 @@ import org.devnull.darkside.JsonBase;
 		@JsonSubTypes.Type(value = MXRecord.class, name = "MX"),
 		@JsonSubTypes.Type(value = ARecord.class, name = "A"),
 		@JsonSubTypes.Type(value = TXTRecord.class, name = "TXT"),
+		@JsonSubTypes.Type(value = CNAMERecord.class, name = "CNAME"),
 		@JsonSubTypes.Type(value = AAAARecord.class, name = "AAAA")
 	}
 )

@@ -1,5 +1,7 @@
 package org.devnull.darkside.records;
 
+import java.util.StringTokenizer;
+
 /**
  * IPRecord encapsulates the string of the IP address and the type: A or AAAA used
  * in the DNS reply.  The type is set automatically when the address is set.
@@ -26,13 +28,37 @@ public class MXRecord extends Record
 	 *
 	 * @param address The String of the ip address
 	 */
-	public void setAddress(final String address)
+	public void setAddress(final String address) throws Exception
 	{
 		if (null == address)
 		{
 			throw new NullPointerException("address cannot be null");
 		}
 
-		this.address = address;
+		String[] fields = address.split("\\s+");
+
+		if (fields.length == 1)
+		{
+			this.address = address;
+		}
+		else if (fields.length == 2)
+		{
+			this.priority = Integer.parseInt(fields[0]);
+			this.address = fields[1];
+		}
+		else
+		{
+			throw new Exception("Too many fields in address: " + address);
+		}
+	}
+
+	public void setPriority(final int p)
+	{
+		priority = p;
+	}
+
+	public int getPriority()
+	{
+		return priority;
 	}
 }
