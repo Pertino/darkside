@@ -72,7 +72,7 @@ public class DNSRecordSetTest
 	}
 
 	@Test
-	public void testJsonDeserialization() throws Exception
+	public void testJson() throws Exception
 	{
 		ObjectMapper mapper = new ObjectMapper();
 		DNSRecordSet s = mapper.readValue("{\"fqdn\":\"foobar\",\"records\":[{\"type\":\"A\",\"address\":\"1.1.1.1\"}],\"ttl\":null}",
@@ -84,5 +84,7 @@ public class DNSRecordSetTest
 		assertEquals(s.getTtl(), null);
 		assertEquals(s.getRecords().size(), 1);
 		assertTrue(s.getRecords().get(0) instanceof ARecord);
+
+		assertEquals(s.toString(), "{\"fqdn\":\"foobar\",\"records\":[{\"type\":\"A\",\"address\":\"1.1.1.1\"}],\"ttl\":null}");
 	}
 }

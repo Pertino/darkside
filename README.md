@@ -60,6 +60,16 @@ LD_LIBRARY_PATH to the path of the untarred directory.
 
 http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Tools.html
 
+Dynamo has a new dependency: sqlite4java, which you can download as a zip file from the
+google code page for it:  https://code.google.com/p/sqlite4java/
+
+Once you have downloaded that, you will need to unzip it, and in the window in which you
+are going to run the localhost dynamo instance, you will need to add the path to that directory
+to your LD_LIBRARY_PATH environment variable, and if on a mac, also do you DYLD_LIBRARY_PATH
+environment variable.  Then the darkside tests will be able to access the localhost dynamo
+instance and you won't get those nasty "can't find sqlite4java in java.library.path" messages
+from the dynamo instance console.
+
 Back to building darkside:
 
 mvn clean package

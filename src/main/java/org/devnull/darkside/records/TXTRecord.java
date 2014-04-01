@@ -29,7 +29,7 @@ public class TXTRecord extends Record
 	{
 		if (null == address)
 		{
-			throw new NullPointerException("address cannot be null");
+			throw new NullPointerException("record cannot be null");
 		}
 
 		this.address = address;

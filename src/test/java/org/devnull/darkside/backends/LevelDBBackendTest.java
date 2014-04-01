@@ -4,6 +4,7 @@ import org.devnull.darkside.*;
 import org.devnull.darkside.configs.LevelDBConfig;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
+import org.devnull.darkside.records.AAAARecord;
 import org.devnull.darkside.records.ARecord;
 import org.devnull.darkside.records.Record;
 import org.devnull.statsd_client.StatsObject;
@@ -51,9 +52,9 @@ public class LevelDBBackendTest extends JsonBase
 		a.setAddress("1.1.1.1");
 		l.add(a);
 
-		a = new ARecord();
-		a.setAddress("2001:fefe");
-		l.add(a);
+		AAAARecord aaaa = new AAAARecord();
+		aaaa.setAddress("2001::fefe");
+		l.add(aaaa);
 
 		DNSRecordSet r = new DNSRecordSet();
 		r.setRecords(l);

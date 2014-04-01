@@ -8,6 +8,7 @@ import org.devnull.darkside.configs.DynamoConfig;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
+import org.devnull.darkside.records.AAAARecord;
 import org.devnull.darkside.records.ARecord;
 import org.devnull.darkside.records.Record;
 import org.devnull.statsd_client.StatsObject;
@@ -180,9 +181,9 @@ public class DynamoDBBackendTest extends JsonBase
 		a.setAddress("1.1.1.1");
 		l.add(a);
 
-		a = new ARecord();
-		a.setAddress("2001:fefe");
-		l.add(a);
+		AAAARecord aaaa = new AAAARecord();
+		aaaa.setAddress("2001::fefe");
+		l.add(aaaa);
 
 		DNSRecordSet r = new DNSRecordSet();
 		r.setRecords(l);

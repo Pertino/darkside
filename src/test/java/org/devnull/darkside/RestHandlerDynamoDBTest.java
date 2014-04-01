@@ -24,6 +24,7 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
+import org.devnull.darkside.records.AAAARecord;
 import org.devnull.darkside.records.ARecord;
 import org.devnull.darkside.records.Record;
 import org.devnull.statsd_client.StatsObject;
@@ -386,7 +387,10 @@ public class RestHandlerDynamoDBTest extends JsonBase
 		ips = new ArrayList<Record>();
 		a = new ARecord();
 		a.setAddress("1.1.1.1");
+		AAAARecord aaaa = new AAAARecord();
+		aaaa.setAddress("2001::fefe");
 		ips.add(a);
+		ips.add(aaaa);
 		r.setRecords(ips);
 		r.setTtl(100);
 		response = getResponse(Type.POST, true, "ttl100.google.com", r);
@@ -421,6 +425,7 @@ public class RestHandlerDynamoDBTest extends JsonBase
 		}
 
 		// get test 4: fetch an fqdn that does exist and has ttl set, expect specific ttl
+		// also expect multiple records
 
 		response = getResponse(Type.GET, true, "ttl100.google.com", null);
 		entity = response.getEntity();
@@ -433,7 +438,7 @@ public class RestHandlerDynamoDBTest extends JsonBase
 
 		assertNotNull(line);
 		assertTrue(line, line.equals(
-			"{\"fqdn\":\"ttl100.google.com\",\"ttl\":100,\"records\":[{\"type\":\"A\",\"address\":\"1.1.1.1\"}]}"));
+			"{\"fqdn\":\"ttl100.google.com\",\"ttl\":100,\"records\":[{\"type\":\"A\",\"address\":\"1.1.1.1\"},{\"type\":\"AAAA\",\"address\":\"2001::fefe\"}]}"));
 
 		if (entity != null)
 		{

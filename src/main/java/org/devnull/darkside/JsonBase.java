@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
 import java.io.IOException;
 
@@ -19,6 +20,7 @@ public abstract class JsonBase
 	static
 	{
 		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
 		mapper.configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true);
 		mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
 	}

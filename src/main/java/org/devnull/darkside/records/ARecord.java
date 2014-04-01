@@ -30,6 +30,11 @@ public class ARecord extends Record
 	public void setAddress(final String address)
 		throws Exception
 	{
+		if (address == null)
+		{
+			throw new NullPointerException("address cannot be null");
+		}
+
 		if (!InetAddressValidator.getInstance().isValidInet4Address(address))
 		{
 			throw new Exception("address is not valid: " + address);
