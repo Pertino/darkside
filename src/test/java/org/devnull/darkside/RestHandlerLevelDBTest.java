@@ -22,6 +22,7 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
+import org.devnull.darkside.records.AAAARecord;
 import org.devnull.darkside.records.ARecord;
 import org.devnull.darkside.records.Record;
 import org.devnull.statsd_client.StatsObject;
@@ -42,6 +43,7 @@ import java.util.*;
 
 import static org.testng.AssertJUnit.assertNotNull;
 import static org.testng.AssertJUnit.assertTrue;
+import static org.testng.AssertJUnit.assertEquals;
 
 public class RestHandlerLevelDBTest extends JsonBase
 {
@@ -206,7 +208,7 @@ public class RestHandlerLevelDBTest extends JsonBase
 		entity = response.getEntity();
 		status = response.getStatusLine().getStatusCode();
 
-		assertTrue("status is: " + status, status == 400);
+        assertEquals(412, status);
 
 		BufferedReader br = new BufferedReader(new InputStreamReader(entity.getContent()));
 		String line = br.readLine();
@@ -229,7 +231,7 @@ public class RestHandlerLevelDBTest extends JsonBase
 		entity = response.getEntity();
 		status = response.getStatusLine().getStatusCode();
 
-		assertTrue("status is: " + status, status == 400);
+        assertEquals(412, status);
 
 		br = new BufferedReader(new InputStreamReader(entity.getContent()));
 		line = br.readLine();
@@ -351,7 +353,59 @@ public class RestHandlerLevelDBTest extends JsonBase
 		StatsObject so = StatsObject.getInstance();
 		TreeMap<String, Long> map = new TreeMap<String, Long>(so.getMap());
 		assertTrue(mapper.writeValueAsString(map), mapper.writeValueAsString(map).equals("{\"LevelDBBackend.deletes.ok\":3,\"LevelDBBackend.gets.ok\":3,\"LevelDBBackend.puts.ok\":2,\"RestHandler.deletes.success\":3,\"RestHandler.deletes.total\":3,\"RestHandler.gets.found\":2,\"RestHandler.gets.not_found\":1,\"RestHandler.gets.total\":3,\"RestHandler.posts.no_records\":2,\"RestHandler.posts.success\":2,\"RestHandler.posts.total\":4}"));
-	}
+
+        //
+        // additional tests
+        //
+        log.debug("creating a specific fqdn");
+
+        r = new DNSRecordSet();
+        ips = new ArrayList<Record>();
+        a = new ARecord();
+        a.setAddress("50.203.224.4");
+        Record aaaa = new AAAARecord();
+        aaaa.setAddress("2001:470:813b::1761:0:902");
+        ips.add(a);
+        ips.add(aaaa);
+        r.setRecords(ips);
+        r.setTtl(null);
+        response = getResponse(Type.POST, true, "putin.porked.the.peace", r);
+        entity = response.getEntity();
+        status = response.getStatusLine().getStatusCode();
+
+        assertTrue("status is: " + status, status == 200);
+
+        if (entity != null)
+        {
+            entity.getContent().close();
+        }
+
+        // fetch that fqdn and make sure the records match expectations
+
+        response = getResponse(Type.GET, true, "putin.porked.the.peace", null);
+        entity = response.getEntity();
+        status = response.getStatusLine().getStatusCode();
+
+        assertTrue("status is: " + status, status == 200);
+
+        br = new BufferedReader(new InputStreamReader(entity.getContent()));
+        line = br.readLine();
+
+        assertNotNull(line);
+
+        DNSRecordSet recordSet = mapper.readValue(line, DNSRecordSet.class);
+        assertNotNull(recordSet);
+        assertEquals(2, recordSet.getRecords().size());
+        assertEquals("putin.porked.the.peace", recordSet.getFqdn());
+        log.debug("record 1: " + recordSet.getRecords().get(0).toString());
+        log.debug("record 2: " + recordSet.getRecords().get(1).toString());
+
+        if (entity != null)
+        {
+            entity.getContent().close();
+        }
+
+    }
 
 	private HttpRequestRetryHandler getMyRetryHandler()
 	{

@@ -40,12 +40,14 @@ public class RestHandler
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response get(@PathParam("fqdn") String fqdn)
 	{
+        so.increment("RestHandler.gets.total");
+
 		if (fqdn == null || fqdn.trim().length() == 0)
 		{
-			return Response.serverError().entity(new HandlerException("fqdn cannot be blank")).build();
+            log.debug("missing fqdn or it was 0 length");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new HandlerException("fqdn cannot be blank")).build();
 		}
-
-		so.increment("RestHandler.gets.total");
 
 		DNSRecordSet r = null;
 
@@ -57,15 +59,15 @@ public class RestHandler
 		catch (Exception e)
 		{
 			so.increment("RestHandler.gets.errors_in_lookup");
-			return Response.status(404).entity(new HandlerException("error fetching record: " + e)).build();
+            return Response.status(Response.Status.SERVICE_UNAVAILABLE)
+                    .entity(new HandlerException("exception fetching item: " + e)).build();
 		}
 
 		if (r == null)
 		{
 			so.increment("RestHandler.gets.not_found");
 			// return 404
-			return Response.status(404).entity(
-				new HandlerException("no record for hostname " + fqdn)).build();
+            return Response.status(Response.Status.NOT_FOUND).build();
 		}
 
 		so.increment("RestHandler.gets.found");
@@ -98,24 +100,29 @@ public class RestHandler
 
 		if (fqdn == null || fqdn.trim().length() == 0)
 		{
-			return Response.serverError().entity(new HandlerException("fqdn cannot be blank")).build();
+            log.debug("missing fqdn or it was 0 length");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new HandlerException("fqdn cannot be blank")).build();
 		}
 
 		if (recordSet == null)
 		{
-			return Response.status(400).entity(new HandlerException("missing record body")).build();
+			return Response.status(Response.Status.PRECONDITION_FAILED)
+                    .entity(new HandlerException("missing record body")).build();
 		}
 
 		if (recordSet.getRecords() == null)
 		{
 			so.increment("RestHandler.posts.no_records");
-			return Response.status(400).entity(new HandlerException("no records were specified")).build();
+			return Response.status(Response.Status.PRECONDITION_FAILED)
+                    .entity(new HandlerException("no records were specified")).build();
 		}
 
 		if (recordSet.getRecords().size() == 0)
 		{
 			so.increment("RestHandler.posts.no_records");
-			return Response.status(400).entity(new HandlerException("records list was empty")).build();
+			return Response.status(Response.Status.PRECONDITION_FAILED)
+                    .entity(new HandlerException("records list was empty")).build();
 		}
 
 		try
@@ -127,8 +134,8 @@ public class RestHandler
 		catch (Exception e)
 		{
 			so.increment("RestHandler.posts.exceptions");
-			return Response.serverError().entity(
-				new HandlerException("exception creating item: " + e)).build();
+			return Response.status(Response.Status.SERVICE_UNAVAILABLE)
+                    .entity(new HandlerException("exception creating item: " + e)).build();
 		}
 
 		return Response.ok().build();
@@ -143,12 +150,13 @@ public class RestHandler
 	@Path("/{fqdn}")
 	public Response delete(@PathParam("fqdn") String fqdn)
 	{
+        so.increment("RestHandler.deletes.total");
+
 		if (fqdn == null || fqdn.trim().length() == 0)
 		{
-			return Response.serverError().entity(new HandlerException("fqdn cannot be blank")).build();
+			return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new HandlerException("fqdn cannot be blank")).build();
 		}
-
-		so.increment("RestHandler.deletes.total");
 
 		try
 		{
@@ -158,8 +166,8 @@ public class RestHandler
 		catch (Exception e)
 		{
 			so.increment("RestHandler.deletes.exceptions");
-			return Response.serverError().entity(
-				new HandlerException("exception deleting item: " + e)).build();
+			return Response.status(Response.Status.SERVICE_UNAVAILABLE)
+                    .entity(new HandlerException("exception deleting item: " + e)).build();
 		}
 
 		return Response.ok().build();

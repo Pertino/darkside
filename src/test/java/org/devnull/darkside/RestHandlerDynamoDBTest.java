@@ -43,6 +43,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.*;
 
+import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.assertNotNull;
 import static org.testng.AssertJUnit.assertTrue;
 
@@ -324,7 +325,7 @@ public class RestHandlerDynamoDBTest extends JsonBase
 		entity = response.getEntity();
 		status = response.getStatusLine().getStatusCode();
 
-		assertTrue("status is: " + status, status == 400);
+        assertEquals(412, status);
 
 		BufferedReader br = new BufferedReader(new InputStreamReader(entity.getContent()));
 		String line = br.readLine();
@@ -347,7 +348,7 @@ public class RestHandlerDynamoDBTest extends JsonBase
 		entity = response.getEntity();
 		status = response.getStatusLine().getStatusCode();
 
-		assertTrue("status is: " + status, status == 400);
+        assertEquals(412, status);
 
 		br = new BufferedReader(new InputStreamReader(entity.getContent()));
 		line = br.readLine();
@@ -475,7 +476,56 @@ public class RestHandlerDynamoDBTest extends JsonBase
 		TreeMap<String, Long> map = new TreeMap<String, Long>(so.getMap());
 		assertTrue(mapper.writeValueAsString(map), mapper.writeValueAsString(map).equals("{\"DynamoDBBackend.deletes.ok\":3,\"DynamoDBBackend.gets.ok\":3,\"DynamoDBBackend.puts.ok\":2,\"DynamoDBBackend.puts.total\":2,\"RestHandler.deletes.success\":3,\"RestHandler.deletes.total\":3,\"RestHandler.gets.found\":2,\"RestHandler.gets.not_found\":1,\"RestHandler.gets.total\":3,\"RestHandler.posts.no_records\":2,\"RestHandler.posts.success\":2,\"RestHandler.posts.total\":4}"));
 
+        //
+        // additional tests
+        //
+        log.debug("creating a specific fqdn");
 
+        r = new DNSRecordSet();
+        ips = new ArrayList<Record>();
+        a = new ARecord();
+        a.setAddress("50.203.224.4");
+        aaaa = new AAAARecord();
+        aaaa.setAddress("2001:470:813b::1761:0:902");
+        ips.add(a);
+        ips.add(aaaa);
+        r.setRecords(ips);
+        r.setTtl(null);
+        response = getResponse(Type.POST, true, "putin.porked.the.peace", r);
+        entity = response.getEntity();
+        status = response.getStatusLine().getStatusCode();
+
+        assertTrue("status is: " + status, status == 200);
+
+        if (entity != null)
+        {
+            entity.getContent().close();
+        }
+
+        // fetch that fqdn and make sure the records match expectations
+
+        response = getResponse(Type.GET, true, "putin.porked.the.peace", null);
+        entity = response.getEntity();
+        status = response.getStatusLine().getStatusCode();
+
+        assertTrue("status is: " + status, status == 200);
+
+        br = new BufferedReader(new InputStreamReader(entity.getContent()));
+        line = br.readLine();
+
+        assertNotNull(line);
+
+        DNSRecordSet recordSet = mapper.readValue(line, DNSRecordSet.class);
+        assertNotNull(recordSet);
+        assertEquals(2, recordSet.getRecords().size());
+        assertEquals("putin.porked.the.peace", recordSet.getFqdn());
+        log.debug("record 1: " + recordSet.getRecords().get(0).toString());
+        log.debug("record 2: " + recordSet.getRecords().get(1).toString());
+
+        if (entity != null)
+        {
+            entity.getContent().close();
+        }
 	}
 
 	private HttpRequestRetryHandler getMyRetryHandler()
