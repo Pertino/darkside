@@ -1,6 +1,7 @@
 package org.devnull.darkside;
 
-import com.sun.jersey.spi.container.servlet.ServletContainer;
+import org.glassfish.jersey.server.ServerProperties;
+import org.glassfish.jersey.servlet.ServletContainer;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -121,27 +122,24 @@ public class Darkside extends JsonBase implements Runnable
 		//
 		ServletHolder servletHolder = new ServletHolder(ServletContainer.class);
 
-		servletHolder.setInitParameter("com.sun.jersey.config.property.resourceConfigClass",
-					       "com.sun.jersey.api.core.PackagesResourceConfig");
-
 		//
 		// IMPORTANT: you have to specify the package where your resources are located
 		// in order for Jetty to pick them up
 		//
-		servletHolder.setInitParameter("com.sun.jersey.config.property.packages", "org.devnull.darkside");
-		servletHolder.setInitParameter("com.sun.jersey.api.json.POJOMappingFeature", "true");
+        servletHolder.setInitParameter(ServerProperties.PROVIDER_PACKAGES, "org.devnull.darkside");
 
-		if (config.enableInternalDebugLogging)
+
+        if (config.enableInternalDebugLogging)
 		{
 			//
 			// comment out to hide debug information
 			//
-			servletHolder.setInitParameter("com.sun.jersey.config.feature.Debug", "true");
-			servletHolder.setInitParameter("com.sun.jersey.config.feature.Trace", "true");
-			servletHolder.setInitParameter("com.sun.jersey.spi.container.ContainerRequestFilters",
-						       "com.sun.jersey.api.container.filter.LoggingFilter");
-			servletHolder.setInitParameter("com.sun.jersey.spi.container.ContainerResponseFilters",
-						       "com.sun.jersey.api.container.filter.LoggingFilter");
+			// servletHolder.setInitParameter("com.sun.jersey.config.feature.Debug", "true");
+			// servletHolder.setInitParameter("com.sun.jersey.config.feature.Trace", "true");
+			// servletHolder.setInitParameter("com.sun.jersey.spi.container.ContainerRequestFilters",
+			//			       "com.sun.jersey.api.container.filter.LoggingFilter");
+			// servletHolder.setInitParameter("com.sun.jersey.spi.container.ContainerResponseFilters",
+			//			       "com.sun.jersey.api.container.filter.LoggingFilter");
 		}
 
 		ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);

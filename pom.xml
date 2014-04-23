@@ -6,22 +6,22 @@
 
     <groupId>org.devnull</groupId>
     <artifactId>darkside</artifactId>
-    <version>1.0.4</version>
+    <version>1.0.5</version>
 
     <dependencies>
 
-        <dependency>
-            <groupId>com.sun.jersey</groupId>
-            <artifactId>jersey-core</artifactId>
-            <version>1.17.1</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.sun.jersey</groupId>
-            <artifactId>jersey-bundle</artifactId>
-            <version>1.17.1</version>
-        </dependency>
-
+	<dependency>
+		<groupId>org.glassfish.jersey.containers</groupId>
+		<artifactId>jersey-container-servlet-core</artifactId>
+		<version>2.7</version>
+	</dependency>
+            
+	<dependency>
+		<groupId>org.glassfish.jersey.core</groupId>
+		<artifactId>jersey-server</artifactId>
+		<version>2.7</version>
+	</dependency>
+            
         <dependency>
             <groupId>org.iq80.leveldb</groupId>
             <artifactId>leveldb</artifactId>
@@ -152,8 +152,8 @@
                 <version>3.0</version>
                 <configuration>
                     <debug>true</debug>
-                    <source>1.6</source>
-                    <target>1.6</target>
+                    <source>7</source>
+                    <target>7</target>
                 </configuration>
             </plugin>
 
