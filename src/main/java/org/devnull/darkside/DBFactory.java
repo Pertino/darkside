@@ -2,6 +2,7 @@ package org.devnull.darkside;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.log4j.Logger;
+import org.devnull.darkside.backends.BackendDB;
 import org.devnull.darkside.backends.DynamoDBBackend;
 import org.devnull.darkside.backends.LevelDBBackend;
 
@@ -23,11 +24,13 @@ public class DBFactory
 
 		if (lowerType.equals("leveldb"))
 		{
-			ret = new LevelDBBackend(config);
+			ret = new LevelDBBackend();
+            ret.configure(config);
 		}
 		else if (lowerType.equals("dynamo"))
 		{
-			ret = new DynamoDBBackend(config);
+			ret = new DynamoDBBackend();
+            ret.configure(config);
 		}
 		else
 		{

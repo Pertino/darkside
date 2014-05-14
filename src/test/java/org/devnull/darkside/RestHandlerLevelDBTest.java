@@ -1,5 +1,6 @@
 package org.devnull.darkside;
 
+import org.devnull.darkside.backends.BackendDB;
 import org.devnull.darkside.configs.DarksideConfig;
 import org.devnull.darkside.configs.LevelDBConfig;
 import org.glassfish.jersey.server.ServerProperties;
@@ -359,7 +360,7 @@ public class RestHandlerLevelDBTest extends JsonBase
         ips.add(aaaa);
         r.setRecords(ips);
         r.setTtl(null);
-        response = getResponse(Type.POST, true, "putin.porked.the.peace", r);
+        response = getResponse(Type.POST, true, "PUTIN.porked.the.peace", r);
         entity = response.getEntity();
         status = response.getStatusLine().getStatusCode();
 
@@ -372,7 +373,7 @@ public class RestHandlerLevelDBTest extends JsonBase
 
         // fetch that fqdn and make sure the records match expectations
 
-        response = getResponse(Type.GET, true, "putin.porked.the.peace", null);
+        response = getResponse(Type.GET, true, "putin.PORKED.the.peace", null);
         entity = response.getEntity();
         status = response.getStatusLine().getStatusCode();
 

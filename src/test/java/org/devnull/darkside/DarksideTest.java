@@ -55,7 +55,7 @@ public class DarksideTest extends JsonBase
 		//
 		Thread.sleep(200);
 
-		ds.shutdown();
+        darksideThread.interrupt();
 		darksideThread.join(2000L);
 		assertTrue(!darksideThread.isAlive());
 

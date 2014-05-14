@@ -10,7 +10,6 @@ import com.amazonaws.services.dynamodbv2.model.TableDescription;
 import com.amazonaws.services.dynamodbv2.model.TableStatus;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.log4j.Logger;
-import org.devnull.darkside.BackendDB;
 import org.devnull.darkside.DNSRecordSet;
 import org.devnull.darkside.JsonBase;
 import org.devnull.darkside.configs.DynamoConfig;
@@ -23,8 +22,11 @@ public class DynamoDBBackend extends JsonBase implements BackendDB
 	private static final Logger log = Logger.getLogger(BackendDB.class);
 	private static final StatsObject so = StatsObject.getInstance();
 
-	public DynamoDBBackend(final JsonNode configNode)
-		throws Exception
+	public DynamoDBBackend()
+    {
+    }
+
+    public void configure(final JsonNode configNode) throws Exception
 	{
 		DynamoConfig config = mapper.treeToValue(configNode, DynamoConfig.class);
 		dynamo = new AmazonDynamoDBClient(new BasicAWSCredentials(config.accessKey, config.secretKey));

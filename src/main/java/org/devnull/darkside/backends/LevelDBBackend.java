@@ -2,7 +2,6 @@ package org.devnull.darkside.backends;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.log4j.Logger;
-import org.devnull.darkside.BackendDB;
 import org.devnull.darkside.DNSRecordSet;
 import org.devnull.darkside.JsonBase;
 import org.devnull.darkside.configs.LevelDBConfig;
@@ -22,8 +21,11 @@ public class LevelDBBackend extends JsonBase implements BackendDB
 
 	private DB db = null;
 
-	public LevelDBBackend(final JsonNode configNode)
-		throws Exception
+	public LevelDBBackend()
+    {
+    }
+
+    public void configure(final JsonNode configNode) throws Exception
 	{
 		LevelDBConfig config = mapper.treeToValue(configNode, LevelDBConfig.class);
 

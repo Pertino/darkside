@@ -1,5 +1,6 @@
 package org.devnull.darkside;
 
+import org.devnull.darkside.backends.BackendDB;
 import org.devnull.darkside.configs.DarksideConfig;
 
 public class StuffHolder

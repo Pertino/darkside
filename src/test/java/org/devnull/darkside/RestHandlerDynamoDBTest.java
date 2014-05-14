@@ -3,6 +3,7 @@ package org.devnull.darkside;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.model.*;
+import org.devnull.darkside.backends.BackendDB;
 import org.devnull.darkside.configs.DarksideConfig;
 import org.devnull.darkside.configs.DynamoConfig;
 import org.glassfish.jersey.server.ServerProperties;

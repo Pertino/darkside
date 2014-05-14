@@ -1,6 +1,7 @@
 package org.devnull.darkside;
 
 import org.apache.log4j.Logger;
+import org.devnull.darkside.backends.BackendDB;
 import org.devnull.darkside.configs.DarksideConfig;
 import org.devnull.statsd_client.StatsObject;
 
@@ -53,8 +54,12 @@ public class RestHandler
 
 		try
 		{
-			log.debug("fetching fqdn: " + fqdn);
-			r = db.get(fqdn);
+            if (log.isDebugEnabled())
+            {
+                log.debug("fetching fqdn: " + fqdn.toLowerCase());
+            }
+
+			r = db.get(fqdn.toLowerCase());
 		}
 		catch (Exception e)
 		{
@@ -127,7 +132,12 @@ public class RestHandler
 
 		try
 		{
-			recordSet.setFqdn(fqdn);
+            if (log.isDebugEnabled())
+            {
+                log.debug("inserting new record for " + fqdn.toLowerCase());
+            }
+
+			recordSet.setFqdn(fqdn.toLowerCase());
 			db.put(recordSet);
 			so.increment("RestHandler.posts.success");
 		}
@@ -160,7 +170,12 @@ public class RestHandler
 
 		try
 		{
-			db.delete(fqdn);
+            if (log.isDebugEnabled())
+            {
+                log.debug("deleting fqdn: " + fqdn.toLowerCase());
+            }
+
+			db.delete(fqdn.toLowerCase());
 			so.increment("RestHandler.deletes.success");
 		}
 		catch (Exception e)
