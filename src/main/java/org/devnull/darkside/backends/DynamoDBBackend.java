@@ -60,6 +60,7 @@ public class DynamoDBBackend extends JsonBase implements BackendDB
 
 	public void put(DNSRecordSet record) throws Exception
 	{
+        long start = System.nanoTime();
 		so.increment("DynamoDBBackend.puts.total");
 
 		try
@@ -76,10 +77,17 @@ public class DynamoDBBackend extends JsonBase implements BackendDB
 			so.increment("DynamoDBBackend.puts.exceptions");
 			throw e;
 		}
+        finally
+        {
+            so.timing("DynamoDBBackend.put", (System.nanoTime() - start) / 1000);
+        }
 	}
 
 	public DNSRecordSet get(String fqdn) throws Exception
 	{
+        long start = System.nanoTime();
+        so.increment("DynamoDBBackend.gets.total");
+
 		try
 		{
 			DynamoRecord r = dynamoMapper.load(DynamoRecord.class, fqdn);
@@ -98,10 +106,17 @@ public class DynamoDBBackend extends JsonBase implements BackendDB
 			so.increment("DynamoDBBackend.gets.exceptions");
 			throw e;
 		}
+        finally
+        {
+            so.timing("DynamoDBBackend.get", (System.nanoTime() - start) / 1000);
+        }
 	}
 
 	public void delete(String fqdn) throws Exception
 	{
+        long start = System.nanoTime();
+        so.increment("DynamoDBBackend.deletes.total");
+
 		if (fqdn == null)
 		{
 			throw new NullPointerException("fqdn argument is null");
@@ -120,6 +135,10 @@ public class DynamoDBBackend extends JsonBase implements BackendDB
 			so.increment("DynamoDBBackend.deletes.exceptions");
 			throw e;
 		}
+        finally
+        {
+            so.timing("DynamoDBBackend.delete", (System.nanoTime() - start) / 1000);
+        }
 	}
 
 	public void shutdown()
