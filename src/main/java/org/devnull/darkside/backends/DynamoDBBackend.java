@@ -40,9 +40,17 @@ public class DynamoDBBackend extends JsonBase implements BackendDB
 			dynamo.setEndpoint(config.endPoint);
 		}
 
+        /*
 		DynamoDBMapperConfig mapperConfig = new DynamoDBMapperConfig(
 			new DynamoDBMapperConfig.TableNameOverride(config.tableName)
 		);
+		*/
+
+        DynamoDBMapperConfig mapperConfig = new DynamoDBMapperConfig(
+                DynamoDBMapperConfig.SaveBehavior.valueOf("CLOBBER"),
+                DynamoDBMapperConfig.ConsistentReads.valueOf("CONSISTENT"),
+                new DynamoDBMapperConfig.TableNameOverride(config.tableName)
+        );
 
 		dynamoMapper = new DynamoDBMapper(dynamo, mapperConfig);
 
