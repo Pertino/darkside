@@ -6,7 +6,7 @@
 
     <groupId>org.devnull</groupId>
     <artifactId>darkside</artifactId>
-    <version>1.0.7</version>
+    <version>1.0.8</version>
 
     <dependencies>
 
@@ -61,7 +61,7 @@
         <dependency>
             <groupId>org.devnull.statsd</groupId>
             <artifactId>Statsd</artifactId>
-            <version>1.0.2</version>
+            <version>1.0.3</version>
         </dependency>
 
         <dependency>

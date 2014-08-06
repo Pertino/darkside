@@ -15,6 +15,7 @@ import javax.ws.rs.core.Response;
 @Path("/fqdn/1")
 public class RestHandler {
     private static final Logger log = Logger.getLogger(RestHandler.class);
+    private static final Logger operationLogger = Logger.getLogger("OperationLogger");
 
     private static DarksideConfig config = null;
     private BackendDB db = null;
@@ -52,6 +53,8 @@ public class RestHandler {
             DNSRecordSet r = null;
 
             try {
+                operationLogger.info("get: " + fqdn);
+
                 if (log.isDebugEnabled()) {
                     log.debug("fetching fqdn: " + fqdn.toLowerCase());
                 }
@@ -126,6 +129,8 @@ public class RestHandler {
             }
 
             try {
+                operationLogger.info("put: " + fqdn);
+
                 if (log.isDebugEnabled()) {
                     log.debug("inserting new record for " + fqdn.toLowerCase());
                 }
@@ -166,6 +171,8 @@ public class RestHandler {
             }
 
             try {
+                operationLogger.info("delete: " + fqdn);
+
                 if (log.isDebugEnabled()) {
                     log.debug("deleting fqdn: " + fqdn.toLowerCase());
                 }
