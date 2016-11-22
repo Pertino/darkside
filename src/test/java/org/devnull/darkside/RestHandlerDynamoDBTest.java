@@ -103,7 +103,7 @@ public class RestHandlerDynamoDBTest extends JsonBase
 			e.printStackTrace();
 		}
 
-		AmazonDynamoDBClient client = new AmazonDynamoDBClient();
+		AmazonDynamoDBClient client = new AmazonDynamoDBClient(new BasicAWSCredentials("foo", "bar"));
 		client.setEndpoint("http://localhost:8000");
 
 		try
