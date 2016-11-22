@@ -29,7 +29,15 @@ public class DynamoDBBackend extends JsonBase implements BackendDB
     public void configure(final JsonNode configNode) throws Exception
 	{
 		DynamoConfig config = mapper.treeToValue(configNode, DynamoConfig.class);
+		if (config.accessKey != null)
+		{
+	        dynamo = new AmazonDynamoDBClient(new BasicAWSCredentials(config.accessKey, config.secretKey));
+		}
+
+		else
+		{
 		dynamo = new AmazonDynamoDBClient();
+        }
 
 		//
 		// this is provided as a way to override which dynamo server VIP to talk to, and is used
